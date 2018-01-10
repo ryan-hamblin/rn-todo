@@ -1,4 +1,6 @@
 import React from 'react';
+import axios from 'axios';
+
 import {
   AsyncStorage,
   StyleSheet,
@@ -10,6 +12,7 @@ import {
 } from 'react-native';
 
 import styles from './Styles';
+import { serverUrl } from './constants';
 
 export default class TodoList extends React.Component {
   state = {
@@ -19,17 +22,27 @@ export default class TodoList extends React.Component {
   };
 
   componentDidMount() {
-    console.log('is Mounted');
-    const myList = AsyncStorage.getItem('tasks');
-    myList
-      .then(res => {
-        if (res !== null) {
-          this.setState(prevState => {
-            let tasks = JSON.parse(res);
-            return {
-              tasks
-            };
-          });
+    const myToken = AsyncStorage.getItem('token');
+    myToken
+      .then(token => {
+        if (token !== null) {
+          axios
+            .get(serverUrl, {
+              headers: {
+                Authorization: token
+              }
+            })
+            .then(response => {
+              this.setState(prevState => {
+                let { tasks } = prevState;
+                return {
+                  tasks: response.data
+                };
+              });
+            })
+            .catch(error => {
+              console.log(error);
+            });
         }
       })
       .catch(err => {
@@ -38,7 +51,6 @@ export default class TodoList extends React.Component {
   }
 
   componentWillUnmount() {
-    console.log('is Un Mounted');
     const tasks = this.state.tasks.slice();
     AsyncStorage.setItem('tasks', JSON.stringify(tasks));
   }
@@ -88,9 +100,9 @@ export default class TodoList extends React.Component {
           data={this.state.tasks}
           renderItem={({ item, index }) => {
             return (
-              <View>
+              <View key={item._id}>
                 <View style={styles.listCont}>
-                  <Text style={styles.textItem}>{item.text}</Text>
+                  <Text style={styles.textItem}>{item.email}</Text>
                   <Button onPress={() => this.deleteTask(index)} title="X" />
                 </View>
                 <View style={styles.hr} />
